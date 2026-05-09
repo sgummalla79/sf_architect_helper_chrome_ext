@@ -30,14 +30,12 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html {
-      height: 560px;
-      overflow: hidden;
+    html, body {
+      height: 100%;
     }
 
     body {
-      width: 420px;
-      height: 560px;
+      min-width: 380px;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -165,6 +163,7 @@
       padding: 10px 16px;
       background: var(--surface);
       border-top: 1px solid var(--border);
+      box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.35);
       flex-shrink: 0;
     }
     .footer label {
@@ -239,7 +238,7 @@
       flex: 1;
       min-height: 0;
       overflow-y: auto;
-      padding: 10px 14px;
+      padding: 10px 14px 16px;
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -251,18 +250,145 @@
       padding: 10px 12px;
     }
     .eng-line1 {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+      min-width: 0;
+    }
+    .eng-name-group {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .eng-name-text {
       font-size: 13px;
       font-weight: 600;
       color: var(--text);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      margin-bottom: 6px;
+      min-width: 0;
     }
-    .eng-line1 .eng-title {
+    .eng-name-text .eng-title {
       font-weight: 400;
       color: var(--text-dim);
     }
+    .btn-set-working {
+      flex-shrink: 0;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border-radius: var(--radius);
+      border: 1px solid rgba(61,214,140,0.4);
+      background: rgba(61,214,140,0.1);
+      color: var(--green);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s, color .15s, border-color .15s, box-shadow .15s, transform .15s;
+    }
+    .btn-set-working:hover { background: var(--green); color: #0a2e1f; border-color: var(--green); box-shadow: 0 3px 10px rgba(0,0,0,0.25); transform: translateY(-1px); }
+    .btn-set-working:active { transform: translateY(0); box-shadow: none; }
+    .btn-set-working:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-schedule {
+      flex-shrink: 0;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border-radius: var(--radius);
+      border: 1px solid rgba(79,143,247,0.4);
+      background: rgba(79,143,247,0.1);
+      color: var(--accent);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s, color .15s, border-color .15s, box-shadow .15s, transform .15s;
+    }
+    .btn-schedule:hover { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 3px 10px rgba(0,0,0,0.25); transform: translateY(-1px); }
+    .btn-schedule:active { transform: translateY(0); box-shadow: none; }
+    .scheduled-pill {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 500;
+      padding: 2px 7px;
+      border-radius: 10px;
+      background: rgba(79,143,247,0.12);
+      color: var(--accent);
+      border: 1px solid rgba(79,143,247,0.25);
+      white-space: nowrap;
+    }
+    .btn-cancel-scheduled {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-dim);
+      font-size: 13px;
+      padding: 0;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+    }
+    .btn-cancel-scheduled:hover { color: var(--red); }
+    .eng-schedule-form {
+      display: none;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 0 4px;
+      border-top: 1px solid var(--border);
+      margin-top: 2px;
+      margin-bottom: 6px;
+    }
+    .eng-schedule-form.open { display: flex; }
+    .schedule-month, .schedule-day, .schedule-year, .schedule-time {
+      box-sizing: border-box;
+      height: 26px;
+      font-size: 11px;
+      font-family: var(--font);
+      padding: 0 5px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      outline: none;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .schedule-month { width: 56px; }
+    .schedule-day   { width: 42px; }
+    .schedule-year  { width: 58px; }
+    .schedule-time  { width: 118px; color-scheme: dark; font-size: 13px !important; }
+    :root.light .schedule-time { color-scheme: light; }
+    .schedule-time:focus { border-color: var(--accent); outline: none; }
+    .btn-schedule-save, .btn-schedule-discard {
+      flex-shrink: 0;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      border-radius: var(--radius);
+      border: none;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: filter .15s, box-shadow .15s, transform .15s;
+    }
+    .btn-schedule-save    { background: rgba(61,214,140,0.12); color: var(--green); border: 1px solid rgba(61,214,140,0.5); }
+    .btn-schedule-discard { background: rgba(240,94,107,0.12); color: var(--red);   border: 1px solid rgba(240,94,107,0.5); }
+    .btn-schedule-save:hover    { background: var(--green); color: #0a2e1f; border-color: var(--green); box-shadow: 0 3px 10px rgba(0,0,0,0.25); transform: translateY(-1px); }
+    .btn-schedule-discard:hover { background: var(--red);   color: #fff;    border-color: var(--red);   box-shadow: 0 3px 10px rgba(0,0,0,0.25); transform: translateY(-1px); }
+    .btn-schedule-save:active, .btn-schedule-discard:active { transform: translateY(0); box-shadow: none; }
+    .btn-schedule-save:disabled, .btn-schedule-discard:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
     .eng-line2 {
       display: flex;
       align-items: center;
@@ -289,21 +415,23 @@
     :root.light .eng-badge.status { color: #92400e; background: #fde68a; }
     :root.light .eng-badge.stage  { color: #1e3a8a; background: #bfdbfe; }
 
-    .btn-call {
+    .btn-action {
       font-size: 11px;
       font-weight: 700;
       padding: 4px 10px;
       border-radius: var(--radius);
-      border: none;
+      border: 1px solid rgba(61,214,140,0.5);
+      background: rgba(61,214,140,0.12);
+      color: var(--green);
       cursor: pointer;
-      transition: opacity .15s;
+      transition: background .15s, color .15s, border-color .15s, box-shadow .15s, transform .15s;
       white-space: nowrap;
     }
-    .btn-call { cursor: pointer; transition: opacity .15s; }
-    .btn-call:hover { opacity: 0.85; }
-    .btn-call:disabled { opacity: 0.35; cursor: not-allowed; }
-    .btn-call.internal { background: var(--green); color: #0a2e1f; }
-    .btn-call.customer { background: var(--green); color: #0a2e1f; }
+    .btn-action:hover { background: var(--green); color: #0a2e1f; border-color: var(--green); box-shadow: 0 3px 10px rgba(0,0,0,0.25); transform: translateY(-1px); }
+    .btn-action:active { transform: translateY(0); box-shadow: none; }
+    .btn-action:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-action.btn-action-complete { background: rgba(240,94,107,0.12); color: var(--red); border-color: rgba(240,94,107,0.5); }
+    .btn-action.btn-action-complete:hover { background: var(--red); color: #fff; border-color: var(--red); }
 
     .eng-duration {
       font-size: 11px;
@@ -323,20 +451,6 @@
       font-weight: 600;
       color: var(--green);
     }
-    .btn-call-completed {
-      font-size: 11px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: var(--radius);
-      border: none;
-      background: var(--red);
-      color: #fff;
-      cursor: pointer;
-      transition: opacity .15s;
-      white-space: nowrap;
-    }
-    .btn-call-completed:hover { opacity: 0.85; }
-    .btn-call-completed:disabled { opacity: 0.35; cursor: not-allowed; }
     .eng-card.scheduled {
       opacity: 0.6;
       border-color: transparent;
@@ -347,12 +461,22 @@
     .accordion {
       flex: 1;
       min-height: 0;
-      overflow-y: auto;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
     }
-    .acc-section { flex-shrink: 0; border-bottom: 1px solid var(--border); }
+    .acc-section {
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+    .acc-section.open {
+      flex: 1;
+      min-height: 0;
+    }
     .acc-header {
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -384,7 +508,8 @@
     }
     .acc-body {
       display: none;
-      height: 140px;
+      flex: 1;
+      min-height: 0;
       overflow-y: auto;
       font-family: 'Consolas', 'SF Mono', monospace;
       font-size: 11px;
@@ -405,7 +530,7 @@
   <div class="header">
     <img src="icons/icon48.png" width="28" height="28" style="border-radius:6px;" />
     <div class="header-info">
-      <h1>Architect Cadence</h1>
+      <h1>Architect Companion</h1>
       <div class="sub">Auto-update Architect Engagements daily</div>
       <div class="session-user no-session" id="sessionUser">Not signed in</div>
     </div>
@@ -460,8 +585,9 @@
   <div class="footer">
     <label for="scheduledTime">Daily Run</label>
     <input type="time" id="scheduledTime" value="17:00" />
+    <div style="flex:1"></div>
     <button class="btn btn-primary" id="btnRunNow">Run Now</button>
-    <button class="btn btn-primary" id="btnOpenConfig">Show Config</button>
+    <button class="btn btn-primary" id="btnOpenConfig">Config</button>
   </div>
 
   <script src="popup.js"></script>

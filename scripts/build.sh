@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build script for Architect Cadence — Mac/Linux
+# Build script for Architect Companion — Mac/Linux
 # Run from the project root: ./scripts/build.sh
 # Packages the extension into a zip ready for Chrome Web Store upload.
 

@@ -1,5 +1,5 @@
 @echo off
-REM Build script for Architect Cadence — Windows
+REM Build script for Architect Companion — Windows
 REM Run from the project root: scripts\build.bat
 REM Requires PowerShell 5+ (built into Windows 10/11).
 

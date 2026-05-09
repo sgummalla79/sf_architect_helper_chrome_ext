@@ -1,10 +1,10 @@
-# Privacy Policy — Architect Cadence
+# Privacy Policy — Architect Companion
 
 _Last updated: April 20, 2026_
 
 ## Overview
 
-Architect Cadence ("the extension") is a Chrome browser extension that manages Salesforce Architect Engagements directly from your browser. It queries and updates Salesforce records using your active Salesforce browser session. This policy explains what data the extension accesses, how it is used, and what is never collected.
+Architect Companion ("the extension") is a Chrome browser extension that manages Salesforce Architect Engagements directly from your browser. It queries and updates Salesforce records using your active Salesforce browser session. This policy explains what data the extension accesses, how it is used, and what is never collected.
 
 ## Data Accessed
 
@@ -41,7 +41,7 @@ All data stored locally never leaves your device and is not accessible to any th
 
 ## Data Never Collected
 
-Architect Cadence does **not**:
+Architect Companion does **not**:
 
 - Collect, transmit, or share any personal data with the extension developer or any third party
 - Send any Salesforce data, credentials, or session tokens to any external server

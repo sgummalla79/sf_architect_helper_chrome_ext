@@ -1,10 +1,10 @@
 {
   "domain": "exp-cloud.my.salesforce.com",
   "apiVersion": "v66.0",
-  "maxRecords": 15,
   "logLevel": "info",
   "object": "Engagement__c",
   "ownerFieldName": "OwnerId",
+  "maxRecords": 15,
   "dailyScheduler": {
     "filters": {
       "conditions": [
@@ -18,54 +18,94 @@
     ]
   },
   "engagementsView": {
-    "nameField": "Name",
-    "titleField": "Title__c",
-    "statusField": "Engagement_Status__c",
-    "stageField": "Stage__c",
-    "filters": {
+    "query": {
+      "fields": ["Name", "Title__c", "Engagement_Status__c", "Stage__c"],
       "conditions": [
         { "field": "Stage__c", "operator": "=", "value": "Delivery" }
-      ]
+      ],
+      "logic": "1"
     },
-    "callCompletedAction": {
-      "updateFields": [
-        { "field": "Engagement_Status__c", "value": "Waiting on Customer" }
-      ]
-    },
+    "scheduledStatus": "Call/Meeting Scheduled",
     "callDurations": ["30s", "1m", "5m", "15m", "30m", "45m", "1h"],
-    "customerCallAction": {
-      "updateFields": [
-        { "field": "Engagement_Status__c", "value": "Call/Meeting Scheduled" }
-      ],
-      "createRecords": [
-        {
-          "object": "Activity__c",
-          "fields": [
-            { "field": "Name",          "value": "Customer Call" },
-            { "field": "Priority__c",   "value": "High" },
-            { "field": "Type__c",       "value": "External Meeting" },
-            { "field": "Notes__c",      "value": "Please update notes on this record after customer is completed" },
-            { "field": "Engagement__c", "value": "{recordId}" }
-          ]
-        }
-      ]
+    "cardDisplay": {
+      "nameField":   "Name",
+      "titleField":  "Title__c",
+      "stageField":  "Stage__c",
+      "statusField": "Engagement_Status__c"
     },
-    "internalCallAction": {
-      "updateFields": [
-        { "field": "Engagement_Status__c", "value": "Call/Meeting Scheduled" }
-      ],
-      "createRecords": [
-        {
-          "object": "Activity__c",
-          "fields": [
-            { "field": "Name",          "value": "Internal Call with CSM/Product" },
-            { "field": "Priority__c",   "value": "Medium" },
-            { "field": "Type__c",       "value": "Internal Meeting" },
-            { "field": "Notes__c",      "value": "Please update notes on this record after internal is completed" },
-            { "field": "Engagement__c", "value": "{recordId}" }
-          ]
-        }
-      ]
-    }
+    "buttons": [
+      {
+        "id": "setToWorking",
+        "label": "Set To Working",
+        "showWhen": "Waiting on Customer",
+        "operations": [
+          {
+            "type": "update",
+            "object": "Engagement__c",
+            "id": "{recordId}",
+            "fields": [
+              { "field": "Engagement_Status__c", "value": "In Progress" }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "customerCall",
+        "label": "Customer Call",
+        "showWhen": "default",
+        "hasDurationPicker": true,
+        "operations": [
+          {
+            "type": "update",
+            "object": "Engagement__c",
+            "id": "{recordId}",
+            "fields": [
+              { "field": "Engagement_Status__c", "value": "Call/Meeting Scheduled" }
+            ]
+          },
+          {
+            "type": "create",
+            "object": "Activity__c",
+            "fields": [
+              { "field": "Name",          "value": "Customer Call" },
+              { "field": "Priority__c",   "value": "High" },
+              { "field": "Type__c",       "value": "External Meeting" },
+              { "field": "Notes__c",      "value": "Please update notes on this record after customer is completed" },
+              { "field": "Engagement__c", "value": "{recordId}" }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "setToWaiting",
+        "label": "Set To Waiting On Customer",
+        "showWhen": "In Progress",
+        "operations": [
+          {
+            "type": "update",
+            "object": "Engagement__c",
+            "id": "{recordId}",
+            "fields": [
+              { "field": "Engagement_Status__c", "value": "Waiting on Customer" }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "callCompleted",
+        "label": "End Call",
+        "showWhen": "scheduled",
+        "operations": [
+          {
+            "type": "update",
+            "object": "Engagement__c",
+            "id": "{recordId}",
+            "fields": [
+              { "field": "Engagement_Status__c", "value": "Waiting on Customer" }
+            ]
+          }
+        ]
+      }
+    ]
   }
 }

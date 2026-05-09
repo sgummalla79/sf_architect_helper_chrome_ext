@@ -1,10 +1,10 @@
-Architect Cadence — Salesforce Record Updater
+Architect Companion — Salesforce Record Updater
 
-Architect Cadence is a Chrome extension that automatically updates Salesforce records on a scheduled daily basis. Designed for Salesforce users who need to bulk-update specific records on a recurring cadence without manual intervention.
+Architect Companion is a Chrome extension that automatically updates Salesforce records on a scheduled daily basis. Designed for Salesforce users who need to bulk-update specific records on a recurring cadence without manual intervention.
 
 HOW IT WORKS
 
-Architect Cadence reads a configuration file (config.json) bundled with the extension. The config defines which Salesforce object to target, what filter conditions to apply, and which fields to update. At the configured time each day — or on demand via the Run Now button — the extension:
+Architect Companion reads a configuration file (config.json) bundled with the extension. The config defines which Salesforce object to target, what filter conditions to apply, and which fields to update. At the configured time each day — or on demand via the Run Now button — the extension:
 
 1. Connects to Salesforce using your active browser session (no separate login required)
 2. Runs the configured SOQL query to find matching records

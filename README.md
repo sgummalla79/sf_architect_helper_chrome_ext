@@ -1,4 +1,4 @@
-# Architect Cadence — Chrome Extension
+# Architect Companion — Chrome Extension
 
 A Chrome extension that manages Salesforce Architect Engagements directly from your browser. It shows your active engagements, lets you log calls with one click, auto-reverts engagement status after a configurable timer, and runs a daily scheduled update — all driven by a single `config.json` file with zero manual intervention.
 
@@ -181,7 +181,7 @@ Numbers in `logic` are 1-based indexes into `conditions`. `logic` is optional wh
 The popup has a fixed header and two tabs.
 
 ### Header
-- **Extension icon + title** — Architect Cadence branding
+- **Extension icon + title** — Architect Companion branding
 - **Session user** — displays the logged-in Salesforce user's name (or "Not signed in")
 - **🌙 / 🌕 Theme toggle** — switches between dark mode (default) and light mode
 - **Active / Inactive toggle** — when Inactive, the daily scheduler SOQL still runs and logs the matched count, but no records are updated
@@ -255,7 +255,7 @@ The following scenarios cover all major features of the extension. Each can be d
 **What it shows:** The extension detects your active Salesforce session and identifies who is logged in.
 
 1. Make sure you are logged in to Salesforce in another Chrome tab.
-2. Click the Architect Cadence extension icon to open the popup.
+2. Click the Architect Companion extension icon to open the popup.
 3. **Expected:** The header shows your Salesforce user name next to "Connected as".
 4. Now log out of Salesforce (or open a browser with no Salesforce session).
 5. Open the popup again.
