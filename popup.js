@@ -69,17 +69,40 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
   });
 });
 
+// ---- Shared status bar ----
+let _sessionText     = "Not signed in";
+let _sessionConnected = false;
+let _serverOnline    = false;
+
+function updateStatusBarInfo() {
+  const el = document.getElementById("statusBarInfo");
+  if (!el) return;
+  const onArchitect = document.getElementById("outer-tab-architect").classList.contains("active");
+  if (onArchitect) {
+    el.textContent = _sessionText;
+    el.className   = `status-bar-info ${_sessionConnected ? "connected" : ""}`;
+  } else {
+    el.textContent = _serverOnline ? "server up and running" : "server not running";
+    el.className   = `status-bar-info ${_serverOnline ? "online" : "offline"}`;
+  }
+}
+
 // ---- Session User ----
 async function loadSessionUser() {
   const resp = await sendMsg({ action: "getSession" });
   const el = $("#sessionUser");
   if (resp?.hasSession && resp.userName) {
-    el.textContent = 'Connected as : ' + resp.userName;
+    _sessionText      = "Connected as : " + resp.userName;
+    _sessionConnected = true;
+    el.textContent = _sessionText;
     el.classList.remove("no-session");
   } else {
+    _sessionText      = "Not signed in";
+    _sessionConnected = false;
     el.textContent = "Not signed in";
     el.classList.add("no-session");
   }
+  updateStatusBarInfo();
 }
 
 // ---- Engagements ----
@@ -308,6 +331,19 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 // ---- Init ----
 document.addEventListener("DOMContentLoaded", async () => {
+  // Hide chat tab by default; only show if chat.enabled is explicitly true in config.json
+  const chatNavBtn = document.querySelector('.bottom-nav-btn[data-outer-tab="chat"]');
+  const chatOuterPanel = document.getElementById("outer-tab-chat");
+  chatNavBtn.style.display = "none";
+  chatOuterPanel.style.display = "none";
+  try {
+    const fileCfg = await fetch(chrome.runtime.getURL("config.json")).then(r => r.json());
+    if (fileCfg.chat?.enabled === true) {
+      chatNavBtn.style.display = "";
+      chatOuterPanel.style.display = "";
+    }
+  } catch (_) { /* config unreadable — chat tab stays hidden */ }
+
   const resp = await sendMsg({ action: "getConfig" });
   if (resp?.config) {
     $("#scheduledTime").value = resp.config.scheduledTime || "17:00";
@@ -389,7 +425,10 @@ async function loadLogs() {
   $("#schedLogCount").textContent = schedLogs.length;
 }
 
-$("#btnRefreshEngagements").addEventListener("click", () => loadEngagements(true));
+$("#btnRefreshEngagements").addEventListener("click", () => {
+  loadEngagements(true);
+  loadSessionUser();
+});
 
 // ---- Engagement Search ----
 function applyEngSearch() {
@@ -417,4 +456,326 @@ function escHtml(s) {
 
 function formatScheduledTime(ts) {
   return new Date(ts).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
+// ============================================================
+// Bottom Navigation — outer tab switching
+// ============================================================
+
+document.querySelectorAll(".bottom-nav-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".bottom-nav-btn").forEach((b) => b.classList.remove("active"));
+    document.querySelectorAll(".outer-panel").forEach((p) => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(`outer-tab-${btn.dataset.outerTab}`).classList.add("active");
+    if (btn.dataset.outerTab === "chat") initChatIfNeeded();
+    updateStatusBarInfo();
+  });
+});
+
+// ============================================================
+// Chat Panel
+// ============================================================
+
+let   CHAT_API_BASE            = "";
+let   CHAT_HEALTH_ENDPOINT     = "/health";
+let   CHAT_CHAT_ENDPOINT       = "/chat";
+let   CHAT_HEALTH_INTERVAL_MS  = 30000;
+let   CHAT_HEALTH_TIMEOUT_MS   = 3000;
+let   CHAT_MAX_FAILURES        = 3;
+const CHAT_STORAGE_KEY         = "chat_history";
+const CHAT_SERVER_KEY          = "chat_server_url";
+
+const chatMessagesEl   = document.getElementById("messages");
+const chatInputEl      = document.getElementById("userInput");
+const chatFormEl       = document.getElementById("inputForm");
+const chatSendBtn      = document.getElementById("sendBtn");
+const chatClearBtn     = document.getElementById("clearBtn");
+const chatResizeHandle = document.getElementById("resizeHandle");
+
+// ---- Resize handle ----
+chatResizeHandle.addEventListener("mousedown", (e) => {
+  e.preventDefault();
+  chatResizeHandle.classList.add("dragging");
+  const startY = e.clientY;
+  const startMessagesH = chatMessagesEl.getBoundingClientRect().height;
+  const startInputH    = chatFormEl.getBoundingClientRect().height;
+
+  function onMouseMove(e) {
+    const delta = e.clientY - startY;
+    chatMessagesEl.style.flex   = "none";
+    chatMessagesEl.style.height = `${Math.max(80, startMessagesH + delta)}px`;
+    chatFormEl.style.flex       = "none";
+    chatFormEl.style.height     = `${Math.max(60, startInputH - delta)}px`;
+    chatInputEl.style.height    = `${Math.max(60, startInputH - delta) - 20}px`;
+  }
+
+  function onMouseUp() {
+    chatResizeHandle.classList.remove("dragging");
+    document.removeEventListener("mousemove", onMouseMove);
+    document.removeEventListener("mouseup", onMouseUp);
+  }
+
+  document.addEventListener("mousemove", onMouseMove);
+  document.addEventListener("mouseup", onMouseUp);
+});
+
+// ---- Server health ----
+let chatServerOnline  = false;
+let chatFailCount     = 0;
+let chatServerChecked = false;
+
+async function chatTryFetch() {
+  try {
+    const res = await fetch(`${CHAT_API_BASE}${CHAT_HEALTH_ENDPOINT}`,
+      { signal: AbortSignal.timeout(CHAT_HEALTH_TIMEOUT_MS) });
+    return res.ok;
+  } catch (_) {
+    return false;
+  }
+}
+
+async function checkChatServer() {
+  const ok = await chatTryFetch();
+  if (ok) { chatFailCount = 0; setChatServerOnline(true); return; }
+
+  for (let i = 0; i < CHAT_MAX_FAILURES; i++) {
+    await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
+    if (await chatTryFetch()) { chatFailCount = 0; setChatServerOnline(true); return; }
+  }
+  chatFailCount++;
+  setChatServerOnline(false);
+}
+
+function setChatServerOnline(online) {
+  chatServerOnline = online;
+  chatInputEl.disabled  = !online;
+  chatSendBtn.disabled  = !online;
+  chatInputEl.placeholder = online ? "Ask anything…" : "Server offline — cannot send messages";
+  const state = online ? "online" : "offline";
+  const dot = document.getElementById("chatServerDot");
+  if (dot) dot.className = `chat-server-dot ${state}`;
+  const row = document.getElementById("chatServerRow");
+  if (row) row.className = `chat-server-row ${state}`;
+  _serverOnline = online;
+  updateStatusBarInfo();
+}
+
+document.getElementById("retryBtn").addEventListener("click", () => {
+  chatFailCount = 0;
+  checkChatServer();
+});
+
+// ---- Chat history ----
+let chatHistory = [];
+
+function saveChatHistory() {
+  chrome.storage.local.set({ [CHAT_STORAGE_KEY]: chatHistory });
+}
+
+function loadChatHistory() {
+  chrome.storage.local.get(CHAT_STORAGE_KEY, (data) => {
+    const saved = data[CHAT_STORAGE_KEY];
+    if (!saved || saved.length === 0) return;
+    chatHistory = saved;
+    chatMessagesEl.querySelectorAll(".message").forEach(el => el.remove());
+    chatHistory.forEach(({ role, content }) => chatAppendMessage(role, content));
+  });
+}
+
+// ---- DOM helpers ----
+function chatAppendMessage(role, content, toolsUsed = []) {
+  const wrapper = document.createElement("div");
+  wrapper.className = `message message--${role === "user" ? "user" : "assistant"}`;
+
+  const bubble = document.createElement("div");
+  bubble.className = "message__bubble";
+  bubble.textContent = content;
+  wrapper.appendChild(bubble);
+
+  if (toolsUsed.length > 0) {
+    const badge = document.createElement("div");
+    badge.className = "message__tools";
+    const trimmed = toolsUsed.map(t => t.includes("__") ? t.split("__").slice(1).join("__") : t);
+    badge.textContent = `Tools used: ${trimmed.join(", ")}`;
+    wrapper.appendChild(badge);
+  }
+
+  chatMessagesEl.appendChild(wrapper);
+  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  return wrapper;
+}
+
+function chatShowTyping() {
+  const wrapper = document.createElement("div");
+  wrapper.className = "message message--assistant typing";
+  wrapper.id = "typingIndicator";
+  wrapper.innerHTML = `<div class="message__bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+  chatMessagesEl.appendChild(wrapper);
+  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+}
+
+function chatRemoveTyping() {
+  document.getElementById("typingIndicator")?.remove();
+}
+
+function setChatStatus(msg, isError = false) {
+  const textEl = document.getElementById("chatStatusText");
+  textEl.textContent = msg;
+  textEl.className = isError ? "chat-status-text error" : "chat-status-text";
+}
+
+function setChatLoading(loading) {
+  chatSendBtn.disabled = loading;
+  chatInputEl.disabled = loading;
+}
+
+// ---- Auto-resize textarea ----
+chatInputEl.addEventListener("input", () => {
+  chatInputEl.style.height = "auto";
+  chatInputEl.style.height = `${Math.min(chatInputEl.scrollHeight, 300)}px`;
+});
+
+chatInputEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    chatFormEl.requestSubmit();
+  }
+});
+
+// ---- Send message ----
+chatFormEl.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!chatServerOnline) return;
+  const text = chatInputEl.value.trim();
+  if (!text) return;
+
+  const currentH = chatInputEl.style.height;
+  chatInputEl.value = "";
+  chatInputEl.style.height = currentH || "auto";
+  setChatStatus("");
+
+  chatAppendMessage("user", text);
+  chatHistory.push({ role: "user", content: text });
+
+  setChatLoading(true);
+  chatShowTyping();
+
+  try {
+    const response = await fetch(`${CHAT_API_BASE}${CHAT_CHAT_ENDPOINT}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: chatHistory }),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`Server error ${response.status}: ${err}`);
+    }
+
+    const data = await response.json();
+    chatRemoveTyping();
+
+    chatAppendMessage("assistant", data.response, data.tools_used ?? []);
+    chatHistory.push({ role: "assistant", content: data.response });
+    saveChatHistory();
+
+    if (data.tools_used?.length > 0) {
+      const trimmed = data.tools_used.map(t => t.includes("__") ? t.split("__").slice(1).join("__") : t);
+      setChatStatus(`Called: ${trimmed.join(", ")}`);
+    }
+  } catch (err) {
+    chatRemoveTyping();
+    const msg = err.message.includes("Failed to fetch")
+      ? `Cannot reach server at ${CHAT_API_BASE} — is it running?`
+      : err.message;
+    chatAppendMessage("assistant", `Error: ${msg}`);
+    setChatStatus(msg, true);
+  } finally {
+    setChatLoading(false);
+    chatInputEl.focus();
+  }
+});
+
+// ---- Clear conversation ----
+chatClearBtn.addEventListener("click", () => {
+  chatHistory = [];
+  saveChatHistory();
+  chatMessagesEl.innerHTML = "";
+  chatAppendMessage("assistant", "Conversation cleared. How can I help?");
+  setChatStatus("");
+});
+
+// ---- Chat server URL config ----
+
+async function loadChatServerUrl() {
+  const cfg = await fetch(chrome.runtime.getURL("config.json")).then(r => r.json());
+
+  // Server URL: storage override (set via pencil UI) takes precedence over config.json
+  const chat = cfg.chat || {};
+  const stored = (await chrome.storage.local.get(CHAT_SERVER_KEY))[CHAT_SERVER_KEY];
+  const url = (stored || chat.server || "").replace(/\/$/, "");
+  if (!url) throw new Error('"chat.server" is not set in config.json.');
+  CHAT_API_BASE = url;
+  document.getElementById("chatServerUrl").textContent = url;
+  document.getElementById("chatServerInput").value = url;
+
+  CHAT_HEALTH_ENDPOINT    = chat.healthPath      || "/health";
+  CHAT_CHAT_ENDPOINT      = chat.messagePath     || "/chat";
+  CHAT_HEALTH_INTERVAL_MS = chat.pollIntervalMs  ?? 30000;
+  CHAT_HEALTH_TIMEOUT_MS  = chat.requestTimeoutMs ?? 3000;
+  CHAT_MAX_FAILURES       = chat.maxRetries       ?? 3;
+}
+
+document.getElementById("chatServerEditBtn").addEventListener("click", () => {
+  document.getElementById("chatServerInput").value = CHAT_API_BASE;
+  document.getElementById("chatServerRow").hidden = true;
+  document.getElementById("chatServerEditRow").hidden = false;
+  const inp = document.getElementById("chatServerInput");
+  inp.focus();
+  inp.select();
+});
+
+document.getElementById("chatServerCancel").addEventListener("click", () => {
+  document.getElementById("chatServerRow").hidden = false;
+  document.getElementById("chatServerEditRow").hidden = true;
+  document.getElementById("chatServerInput").classList.remove("invalid");
+});
+
+document.getElementById("chatServerSave").addEventListener("click", async () => {
+  const inp = document.getElementById("chatServerInput");
+  const rawUrl = inp.value.trim().replace(/\/$/, "");
+  if (!rawUrl.startsWith("http://") && !rawUrl.startsWith("https://")) {
+    inp.classList.add("invalid");
+    return;
+  }
+  inp.classList.remove("invalid");
+
+  CHAT_API_BASE = rawUrl;
+  await chrome.storage.local.set({ [CHAT_SERVER_KEY]: rawUrl });
+  document.getElementById("chatServerUrl").textContent = rawUrl;
+  document.getElementById("chatServerRow").hidden = false;
+  document.getElementById("chatServerEditRow").hidden = true;
+
+  // Re-check health with new URL
+  chatServerChecked = false;
+  setChatServerOnline(false);
+  checkChatServer();
+});
+
+document.getElementById("chatServerInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter")  document.getElementById("chatServerSave").click();
+  if (e.key === "Escape") document.getElementById("chatServerCancel").click();
+});
+
+// ---- Init chat on first switch to tab ----
+async function initChatIfNeeded() {
+  if (chatServerChecked) return;
+  chatServerChecked = true;
+  await loadChatServerUrl();
+  chatInputEl.disabled = true;
+  chatSendBtn.disabled = true;
+  checkChatServer();
+  setInterval(checkChatServer, CHAT_HEALTH_INTERVAL_MS);
+  loadChatHistory();
 }

@@ -30,9 +30,7 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html, body {
-      height: 100%;
-    }
+    html, body { height: 100%; }
 
     body {
       min-width: 380px;
@@ -46,6 +44,108 @@
       line-height: 1.5;
     }
 
+    /* ---- Outer tab structure ---- */
+    .outer-wrap {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .outer-panel {
+      display: none;
+      flex: 1;
+      min-height: 0;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .outer-panel.active { display: flex; }
+
+    /* ---- Shared top bar ---- */
+    .common-status-bar {
+      display: flex;
+      align-items: center;
+      padding: 5px 12px;
+      background: var(--surface);
+      flex-shrink: 0;
+      gap: 6px;
+      position: relative;
+    }
+    .common-status-bar::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 8%; right: 8%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), var(--accent-hover), var(--accent), transparent);
+      opacity: 0.45;
+    }
+    .status-bar-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .status-bar-info {
+      flex: 1;
+      font-size: 11px;
+      color: var(--text-dim);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .status-bar-info.connected  { color: var(--accent); }
+    .status-bar-info.online     { color: #22c55e; }
+    .status-bar-info.offline    { color: #ef4444; }
+    .btn-icon-sm {
+      width: 26px; height: 26px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: none;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--text-dim);
+      font-size: 14px;
+      transition: background .15s, color .15s;
+    }
+    .btn-icon-sm:hover {
+      background: var(--surface2);
+      color: var(--text);
+    }
+    .btn-icon-sm:active { opacity: 0.7; }
+
+    /* ---- Bottom navigation ---- */
+    .bottom-nav {
+      display: flex;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
+    }
+    .bottom-nav-btn {
+      flex: 1;
+      padding: 8px 0 6px;
+      font-size: 11px;
+      font-weight: 600;
+      background: none;
+      border: none;
+      border-top: 2px solid transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all .15s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      letter-spacing: 0.3px;
+      font-family: var(--font);
+    }
+    .bottom-nav-btn:hover { color: var(--text); }
+    .bottom-nav-btn.active {
+      color: var(--accent);
+      border-top-color: var(--accent);
+    }
+
     /* ---- Toast ---- */
     #toast {
       display: none;
@@ -57,7 +157,7 @@
       font-weight: 500;
     }
 
-    /* ---- Header ---- */
+    /* ---- Header (Architect) ---- */
     .header {
       display: flex;
       align-items: center;
@@ -149,7 +249,7 @@
       color: var(--text-dim);
     }
 
-    /* ---- Tabs ---- */
+    /* ---- Inner Tabs (Engagements / Logs) ---- */
     .tab-bar {
       display: flex;
       background: var(--surface);
@@ -600,81 +700,481 @@
     .eng-search::placeholder { color: var(--text-dim); }
     .empty-msg { color: var(--text-dim); text-align: center; padding: 30px 0; }
     .eng-loading { color: var(--text-dim); text-align: center; padding: 30px 0; font-size: 12px; }
+
+    /* ================================================================
+       CHAT PANEL — scoped under .chat-panel, theme-aware via --cp-* vars
+       ================================================================ */
+
+    /* Dark theme defaults */
+    .chat-panel {
+      --cp-bg:       #0f1117;
+      --cp-surface:  #1a1d27;
+      --cp-surface2: #242836;
+      --cp-border:   #2e3348;
+      --cp-text:     #e2e4ed;
+      --cp-muted:    #8b8fa8;
+      --cp-primary:  #0176d3;
+    }
+    /* Light theme overrides */
+    :root.light .chat-panel {
+      --cp-bg:       #f5f6f8;
+      --cp-surface:  #ffffff;
+      --cp-surface2: #f9fafb;
+      --cp-border:   #e2e5ea;
+      --cp-text:     #1a1a1a;
+      --cp-muted:    #6b7280;
+      --cp-primary:  #0176d3;
+    }
+
+    .chat-panel {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--cp-bg);
+      color: var(--cp-text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* messages area */
+    .chat-panel .messages-wrap {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+    }
+    .chat-panel .messages {
+      height: 100%;
+      overflow-y: auto;
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: var(--cp-bg);
+    }
+    .chat-panel .chat-clear-float {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 10;
+      width: 26px;
+      height: 26px;
+      background: var(--cp-surface);
+      border: 1px solid var(--cp-border);
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--cp-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.6;
+      transition: opacity 0.15s, color 0.15s, background 0.15s, border-color 0.15s;
+    }
+    .chat-panel .chat-clear-float:hover {
+      opacity: 1;
+      color: #dc2626;
+      background: #fee2e2;
+      border-color: #fca5a5;
+    }
+    .chat-panel .message { display: flex; }
+    .chat-panel .message--user     { justify-content: flex-end; }
+    .chat-panel .message--assistant { justify-content: flex-start; }
+    .chat-panel .message__bubble {
+      max-width: 82%;
+      padding: 9px 13px;
+      border-radius: 12px;
+      font-size: 13.5px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.55;
+    }
+    .chat-panel .message--user .message__bubble {
+      background: var(--cp-primary);
+      color: #ffffff;
+      border-bottom-right-radius: 3px;
+    }
+    .chat-panel .message--assistant .message__bubble {
+      background: var(--cp-surface);
+      color: var(--cp-text);
+      border: 1px solid var(--cp-border);
+      border-bottom-left-radius: 3px;
+    }
+    .chat-panel .message__tools {
+      margin-top: 5px;
+      font-size: 11px;
+      color: var(--cp-muted);
+      font-style: italic;
+    }
+
+    /* typing indicator */
+    .chat-panel .typing .message__bubble {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      padding: 12px 14px;
+    }
+    .chat-panel .typing .dot {
+      width: 7px; height: 7px;
+      background: var(--cp-muted);
+      border-radius: 50%;
+      animation: chatBounce 1.2s infinite ease-in-out;
+    }
+    .chat-panel .typing .dot:nth-child(2) { animation-delay: 0.2s; }
+    .chat-panel .typing .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes chatBounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40%           { transform: translateY(-6px); }
+    }
+
+    /* status bar */
+    .chat-panel .chat-status {
+      display: flex;
+      align-items: center;
+      min-height: 22px;
+      font-size: 11px;
+      padding: 2px 12px;
+      flex-shrink: 0;
+      background: var(--cp-bg);
+      border-top: 1px solid var(--cp-border);
+    }
+    .chat-panel .chat-status-text {
+      flex: 1;
+      color: var(--cp-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .chat-panel .chat-status-text.error { color: #c0392b; }
+
+    /* resize handle */
+    .chat-panel .resize-handle {
+      height: 6px;
+      background: var(--cp-border);
+      cursor: ns-resize;
+      flex-shrink: 0;
+      position: relative;
+      transition: background 0.15s;
+    }
+    .chat-panel .resize-handle:hover,
+    .chat-panel .resize-handle.dragging { background: var(--cp-primary); }
+    .chat-panel .resize-handle::before {
+      content: '';
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      width: 32px; height: 2px;
+      border-radius: 2px;
+      background: var(--cp-muted);
+    }
+    .chat-panel .resize-handle:hover::before,
+    .chat-panel .resize-handle.dragging::before { background: var(--cp-text); }
+
+    /* input bar */
+    .chat-panel .input-bar {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--cp-surface);
+      border-top: 1px solid var(--cp-border);
+      flex-shrink: 0;
+      min-height: 60px;
+    }
+    .chat-panel .input-bar__textarea {
+      flex: 1;
+      resize: none;
+      border: 1px solid var(--cp-border);
+      border-radius: 10px;
+      padding: 8px 11px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 13.5px;
+      line-height: 1.5;
+      outline: none;
+      min-height: 38px;
+      max-height: 200px;
+      overflow-y: auto;
+      transition: border-color 0.15s;
+      background: var(--cp-surface2);
+      color: var(--cp-text);
+    }
+    .chat-panel .input-bar__textarea:focus { border-color: var(--cp-primary); }
+    .chat-panel .input-bar__textarea::placeholder { color: var(--cp-muted); }
+    .chat-panel .input-bar__send {
+      width: 36px; height: 36px;
+      flex-shrink: 0;
+      background: var(--cp-primary);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    .chat-panel .input-bar__send:hover:not(:disabled) { background: #014486; }
+    .chat-panel .input-bar__send:disabled { background: var(--cp-border); cursor: not-allowed; }
+
+    /* chat server config row */
+    .chat-panel .chat-server-row,
+    .chat-panel .chat-server-edit-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      background: var(--cp-surface2);
+      border-bottom: 1px solid var(--cp-border);
+      flex-shrink: 0;
+      font-size: 13px;
+      transition: background 0.3s, border-color 0.3s;
+    }
+    .chat-panel .chat-server-row.online {
+      background: rgba(8, 145, 178, 0.10);
+      border-bottom-color: rgba(8, 145, 178, 0.25);
+    }
+    .chat-panel .chat-server-row.offline {
+      background: rgba(234, 88, 12, 0.10);
+      border-bottom-color: rgba(234, 88, 12, 0.25);
+    }
+    .chat-panel .chat-server-edit-row[hidden],
+    .chat-panel .chat-server-row[hidden] { display: none; }
+    .chat-panel .chat-server-dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      background: var(--cp-muted);
+      flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    .chat-panel .chat-server-dot.online  { background: #22c55e; }
+    .chat-panel .chat-server-dot.offline { background: #ef4444; }
+    .chat-panel .chat-server-url {
+      flex: 1;
+      color: var(--cp-muted);
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .chat-panel .chat-server-status {
+      font-size: 12px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      color: var(--cp-muted);
+    }
+    .chat-panel .chat-server-icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--cp-muted);
+      padding: 2px 4px;
+      display: flex;
+      align-items: center;
+      border-radius: 4px;
+      transition: color 0.15s;
+      flex-shrink: 0;
+    }
+    .chat-panel .chat-server-icon-btn:hover { color: var(--cp-primary); }
+    .chat-panel .chat-server-input {
+      flex: 1;
+      padding: 3px 7px;
+      font-size: 11px;
+      font-family: 'SF Mono', 'Consolas', monospace;
+      border: 1px solid var(--cp-border);
+      border-radius: 6px;
+      outline: none;
+      background: var(--cp-surface);
+      color: var(--cp-text);
+    }
+    .chat-panel .chat-server-input:focus { border-color: var(--cp-primary); }
+    .chat-panel .chat-server-input.invalid { border-color: #ef4444; }
+    .chat-panel .chat-server-save,
+    .chat-panel .chat-server-cancel {
+      width: 22px; height: 22px;
+      flex-shrink: 0;
+      border-radius: 5px;
+      border: none;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    .chat-panel .chat-server-save   { background: #dcfce7; color: #16a34a; }
+    .chat-panel .chat-server-cancel { background: #fee2e2; color: #dc2626; }
+    .chat-panel .chat-server-save:hover   { background: #16a34a; color: #fff; }
+    .chat-panel .chat-server-cancel:hover { background: #dc2626; color: #fff; }
   </style>
 </head>
 <body>
 
-  <div id="toast"></div>
+  <!-- Outer wrapper fills all space above the bottom nav -->
+  <div class="outer-wrap">
 
-  <!-- Header -->
-  <div class="header">
-    <img src="icons/icon48.png" width="28" height="28" style="border-radius:6px;" />
-    <div class="header-info">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <h1>Architect Companion</h1>
-        <button id="btnReloadExt" class="btn-reload-ext" title="Reload extension to pick up config.json changes"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
-      </div>
-      <div class="sub">Auto-update Architect Engagements daily</div>
-      <div class="session-user no-session" id="sessionUser">Not signed in</div>
-    </div>
-    <button id="btnTheme" title="Toggle light/dark" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px;line-height:1;color:var(--text-dim);">🌙</button>
-    <button class="btn btn-toggle active" id="btnToggle">● Active</button>
-  </div>
+    <!-- ===================== PANEL 1: SF ARCHITECT ===================== -->
+    <div class="outer-panel active" id="outer-tab-architect">
 
-  <!-- Tab Bar -->
-  <div class="tab-bar">
-    <button class="tab-btn active" data-tab="engagements">Engagements</button>
-    <button class="tab-btn" data-tab="logs">Logs</button>
-  </div>
+      <div id="toast"></div>
 
-  <!-- Tab: Logs -->
-  <div class="tab-panel" id="tab-logs">
-    <div class="accordion" id="logAccordion">
-      <div class="acc-section open" id="accEngagements">
-        <div class="acc-header">
-          <span class="acc-title">
-            <span class="acc-chevron">▶</span> Engagement Logs
-            <span class="acc-count" id="engLogCount">0</span>
-          </span>
-          <button class="btn btn-danger btn-sm" id="btnClearEngLogs">Clear</button>
+      <!-- Header -->
+      <div class="header">
+        <div class="header-info">
+          <div class="sub">Auto-update Architect Engagements daily</div>
+          <div class="session-user no-session" id="sessionUser" style="display:none">Not signed in</div>
         </div>
-        <div class="acc-body" id="engLogList"><div class="empty-msg">No logs yet.</div></div>
+        <button class="btn btn-toggle active" id="btnToggle">● Active</button>
       </div>
-      <div class="acc-section" id="accScheduler">
-        <div class="acc-header">
-          <span class="acc-title">
-            <span class="acc-chevron">▶</span> Daily Scheduler Logs
-            <span class="acc-count" id="schedLogCount">0</span>
-          </span>
-          <button class="btn btn-danger btn-sm" id="btnClearSchedLogs">Clear</button>
+
+      <!-- Inner Tab Bar -->
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="engagements">Engagements</button>
+        <button class="tab-btn" data-tab="logs">Logs</button>
+      </div>
+
+      <!-- Inner Tab: Logs -->
+      <div class="tab-panel" id="tab-logs">
+        <div class="accordion" id="logAccordion">
+          <div class="acc-section open" id="accEngagements">
+            <div class="acc-header">
+              <span class="acc-title">
+                <span class="acc-chevron">▶</span> Engagement Logs
+                <span class="acc-count" id="engLogCount">0</span>
+              </span>
+              <button class="btn btn-danger btn-sm" id="btnClearEngLogs">Clear</button>
+            </div>
+            <div class="acc-body" id="engLogList"><div class="empty-msg">No logs yet.</div></div>
+          </div>
+          <div class="acc-section" id="accScheduler">
+            <div class="acc-header">
+              <span class="acc-title">
+                <span class="acc-chevron">▶</span> Daily Scheduler Logs
+                <span class="acc-count" id="schedLogCount">0</span>
+              </span>
+              <button class="btn btn-danger btn-sm" id="btnClearSchedLogs">Clear</button>
+            </div>
+            <div class="acc-body" id="schedLogList"><div class="empty-msg">No logs yet.</div></div>
+          </div>
         </div>
-        <div class="acc-body" id="schedLogList"><div class="empty-msg">No logs yet.</div></div>
       </div>
-    </div>
-  </div>
 
-  <!-- Tab: Engagements -->
-  <div class="tab-panel active" id="tab-engagements">
-    <div class="eng-strip">
-      <span class="logs-title">My Engagements</span>
-      <button class="eng-strip-refresh" id="btnRefreshEngagements" title="Refresh engagements"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button>
-    </div>
-    <div class="eng-search-wrap">
-      <svg class="eng-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="engSearch" class="eng-search" placeholder="Search by name or title…" />
-    </div>
-    <div class="eng-list" id="engList">
-      <div class="eng-loading">Loading engagements…</div>
-    </div>
-  </div>
+      <!-- Inner Tab: Engagements -->
+      <div class="tab-panel active" id="tab-engagements">
+        <div class="eng-strip">
+          <span class="logs-title">My Engagements</span>
+          <button class="eng-strip-refresh" id="btnRefreshEngagements" title="Refresh engagements"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button>
+        </div>
+        <div class="eng-search-wrap">
+          <svg class="eng-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="engSearch" class="eng-search" placeholder="Search by name or title…" />
+        </div>
+        <div class="eng-list" id="engList">
+          <div class="eng-loading">Loading engagements…</div>
+        </div>
+      </div>
 
-  <!-- Sticky Footer -->
-  <div class="footer">
-    <label for="scheduledTime">Daily Run</label>
-    <input type="time" id="scheduledTime" value="17:00" />
-    <div style="flex:1"></div>
-    <button class="btn btn-run-now" id="btnRunNow"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:middle"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Run Now</button>
-    <button class="btn btn-open-config" id="btnOpenConfig"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:middle"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>Config</button>
+      <!-- Sticky Footer -->
+      <div class="footer">
+        <label for="scheduledTime">Daily Run</label>
+        <input type="time" id="scheduledTime" value="17:00" />
+        <div style="flex:1"></div>
+        <button class="btn btn-run-now" id="btnRunNow"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:middle"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Run Now</button>
+        <button class="btn btn-open-config" id="btnOpenConfig"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:middle"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>Config</button>
+      </div>
+
+    </div><!-- /outer-tab-architect -->
+
+    <!-- ===================== PANEL 2: CHAT ===================== -->
+    <div class="outer-panel" id="outer-tab-chat">
+      <div class="chat-panel">
+
+        <!-- Server config row (view mode) -->
+        <div class="chat-server-row" id="chatServerRow">
+          <span class="chat-server-dot" id="chatServerDot"></span>
+          <span class="chat-server-url" id="chatServerUrl">http://localhost:8000</span>
+          <button class="chat-server-icon-btn" id="retryBtn" title="Retry connection">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+          </button>
+          <button class="chat-server-icon-btn" id="chatServerEditBtn" title="Configure server URL">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+        </div>
+
+        <!-- Server config row (edit mode) -->
+        <div class="chat-server-edit-row" id="chatServerEditRow" hidden>
+          <input type="text" class="chat-server-input" id="chatServerInput" placeholder="http://localhost:8000" />
+          <button class="chat-server-save" id="chatServerSave" title="Save">✓</button>
+          <button class="chat-server-cancel" id="chatServerCancel" title="Cancel">✕</button>
+        </div>
+
+        <!-- Messages -->
+        <div class="messages-wrap">
+          <div class="messages" id="messages">
+            <div class="message message--assistant">
+              <div class="message__bubble">
+                Hi! I can answer questions and look up GUS work items for you.
+                Try asking: <em>"What is work item W-12345?"</em>
+              </div>
+            </div>
+          </div>
+          <button class="chat-clear-float" id="clearBtn" title="Clear conversation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+              <path d="M10 11v6"/><path d="M14 11v6"/>
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Status bar -->
+        <div class="chat-status" id="chatStatus">
+          <span class="chat-status-text" id="chatStatusText"></span>
+        </div>
+
+        <!-- Resize handle -->
+        <div class="resize-handle" id="resizeHandle"></div>
+
+        <!-- Input -->
+        <form class="input-bar" id="inputForm">
+          <textarea
+            class="input-bar__textarea"
+            id="userInput"
+            placeholder="Ask anything…"
+            rows="1"
+          ></textarea>
+          <button class="input-bar__send" id="sendBtn" type="submit" title="Send">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+              <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
+            </svg>
+          </button>
+        </form>
+
+      </div>
+    </div><!-- /outer-tab-chat -->
+
+  </div><!-- /outer-wrap -->
+
+  <!-- ===================== BOTTOM NAVIGATION ===================== -->
+  <nav class="bottom-nav">
+    <button class="bottom-nav-btn active" data-outer-tab="architect">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+      Architect
+    </button>
+    <button class="bottom-nav-btn" data-outer-tab="chat">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+      Chat
+    </button>
+  </nav>
+
+  <!-- Common status bar: below tabs, shared across both panels -->
+  <div class="common-status-bar">
+    <span class="status-bar-label">Status :</span>
+    <span class="status-bar-info" id="statusBarInfo"></span>
+    <button id="btnTheme" class="btn-icon-sm" title="Toggle light/dark">🌙</button>
+    <button id="btnReloadExt" class="btn-icon-sm" title="Reload extension to pick up config.json changes"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
   </div>
 
   <script src="popup.js"></script>

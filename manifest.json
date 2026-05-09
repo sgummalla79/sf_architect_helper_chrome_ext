@@ -14,7 +14,8 @@
     "https://*.salesforce.com/*",
     "https://*.force.com/*",
     "https://*.my.salesforce.com/*",
-    "https://*.lightning.force.com/*"
+    "https://*.lightning.force.com/*",
+    "http://localhost:7432/*"
   ],
   "background": {
     "service_worker": "background.js"
