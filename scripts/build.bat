@@ -38,7 +38,7 @@ powershell -NoProfile -Command ^
   "Set-Content -Path (Join-Path $tmp 'settings.json') -Value \"{`\"env`\":`\"$env`\"}\";" ^
   "$iconsDir = Join-Path $tmp 'icons';" ^
   "New-Item -ItemType Directory -Path $iconsDir | Out-Null;" ^
-  "foreach ($i in @('icon16.png','icon48.png','icon128.png')) { Copy-Item (Join-Path $src 'icons' $i) $iconsDir };" ^
+  "foreach ($i in @('icon16.png','icon48.png','icon128.png')) { Copy-Item (Join-Path (Join-Path $src 'icons') $i) $iconsDir };" ^
   "Compress-Archive -Path (Join-Path $tmp '*') -DestinationPath $out;" ^
   "Remove-Item $tmp -Recurse -Force;" ^
   "Write-Host \"Build complete: $out\""
