@@ -1,0 +1,97 @@
+{
+  "chat": {
+    "enabled": false,
+    "server": "http://localhost:7432",
+    "healthPath": "/health",
+    "messagePath": "/chat",
+    "pollIntervalMs": 30000,
+    "requestTimeoutMs": 3000,
+    "maxRetries": 3
+  },
+  "domain": "orgcs.my.salesforce.com",
+  "apiVersion": "v66.0",
+  "logLevel": "info",
+  "object": "csc__Playbook__c",
+  "ownerFieldName": "OwnerId",
+  "maxRecords": 15,
+  "dailyScheduler": {
+    "filters": {
+      "conditions": [
+        { "field": "csc__Stage__c",          "operator": "=",  "value": "Delivery" },
+        { "field": "csc__Playbook_Status__c", "operator": "!=", "value": "Waiting on Customer" }
+      ],
+      "logic": "1 AND 2"
+    },
+    "updateFields": [
+      { "field": "csc__Playbook_Status__c", "value": "Waiting on Customer" }
+    ]
+  },
+  "engagementsView": {
+    "query": {
+      "fields": ["Engagement_ID__c", "Name", "csc__Stage__c", "csc__Playbook_Status__c"],
+      "conditions": [
+        { "field": "csc__Stage__c", "operator": "=", "value": "Delivery" }
+      ],
+      "logic": "1"
+    },
+    "scheduledStatus": "Call/Meeting Scheduled",
+    "callDurations": ["30s", "1m", "5m", "15m", "30m", "45m", "1h"],
+    "cardDisplay": {
+      "nameField":   "Engagement_ID__c",
+      "titleField":  "Name",
+      "stageField":  "csc__Stage__c",
+      "statusField": "csc__Playbook_Status__c"
+    },
+    "buttons": [
+      {
+        "id": "setToWorking",
+        "label": "Set To Working",
+        "showWhen": "Waiting on Customer",
+        "operations": [
+          { "type": "update", "object": "csc__Playbook__c", "id": "{recordId}",
+            "fields": [{ "field": "csc__Playbook_Status__c", "value": "In Progress" }] }
+        ]
+      },
+      {
+        "id": "customerCall",
+        "label": "Customer Call",
+        "showWhen": "default",
+        "hasDurationPicker": true,
+        "operations": [
+          { "type": "update", "object": "csc__Playbook__c", "id": "{recordId}",
+            "fields": [{ "field": "csc__Playbook_Status__c", "value": "Call/Meeting Scheduled" }] },
+          { "type": "create", "object": "csc__Activity__c",
+            "fields": [
+              { "field": "cssf_Subject__c",     "value": "Customer Call" },
+              { "field": "cssf_Priority__c",    "value": "High" },
+              { "field": "csc__Type__c",        "value": "Customer Meeting" },
+              { "field": "csc__Notes__c",       "value": "<p>Customer Meeting - Update the notes here after meeting</p>" },
+              { "field": "csc__Summary__c",     "value": "Customer Call" },
+              { "field": "cssf_Engagement__c",  "value": "{recordId}" },
+              { "field": "cssf_Assigned_To__c", "soql": "SELECT Id FROM csc__Resource__c WHERE csc__Salesforce_User__c = '{currentUserId}'", "soqlResultField": "Id" },
+              { "field": "cssf_Start_Date__c",  "value": "{currentDate}" }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "setToWaiting",
+        "label": "Set To Waiting On Customer",
+        "showWhen": "In Progress",
+        "operations": [
+          { "type": "update", "object": "csc__Playbook__c", "id": "{recordId}",
+            "fields": [{ "field": "csc__Playbook_Status__c", "value": "Waiting on Customer" }] }
+        ]
+      },
+      {
+        "id": "callCompleted",
+        "label": "End Call",
+        "showWhen": "scheduled",
+        "operations": [
+          { "type": "update", "object": "csc__Playbook__c", "id": "{recordId}",
+            "fields": [{ "field": "csc__Playbook_Status__c", "value": "Waiting on Customer" }] }
+        ]
+      }
+    ]
+  }
+}

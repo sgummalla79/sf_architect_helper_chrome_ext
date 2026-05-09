@@ -337,7 +337,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   chatNavBtn.style.display = "none";
   chatOuterPanel.style.display = "none";
   try {
-    const fileCfg = await fetch(chrome.runtime.getURL("config.json")).then(r => r.json());
+    const settings = await fetch(chrome.runtime.getURL("settings.json")).then(r => r.json()).catch(() => ({ env: "dev" }));
+    const fileCfg = await fetch(chrome.runtime.getURL(`config.${settings.env || "dev"}.json`)).then(r => r.json());
     if (fileCfg.chat?.enabled === true) {
       chatNavBtn.style.display = "";
       chatOuterPanel.style.display = "";
@@ -366,8 +367,9 @@ $("#scheduledTime").addEventListener("change", async () => {
 });
 
 // ---- Open Config ----
-$("#btnOpenConfig").addEventListener("click", () => {
-  window.open(chrome.runtime.getURL("config.json"), "_blank");
+$("#btnOpenConfig").addEventListener("click", async () => {
+  const settings = await fetch(chrome.runtime.getURL("settings.json")).then(r => r.json()).catch(() => ({ env: "dev" }));
+  window.open(chrome.runtime.getURL(`config.${settings.env || "dev"}.json`), "_blank");
 });
 
 // ---- Reload Extension ----
@@ -709,7 +711,8 @@ chatClearBtn.addEventListener("click", () => {
 // ---- Chat server URL config ----
 
 async function loadChatServerUrl() {
-  const cfg = await fetch(chrome.runtime.getURL("config.json")).then(r => r.json());
+  const settings = await fetch(chrome.runtime.getURL("settings.json")).then(r => r.json()).catch(() => ({ env: "dev" }));
+  const cfg = await fetch(chrome.runtime.getURL(`config.${settings.env || "dev"}.json`)).then(r => r.json());
 
   // Server URL: storage override (set via pencil UI) takes precedence over config.json
   const chat = cfg.chat || {};

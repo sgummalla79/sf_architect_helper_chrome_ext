@@ -25,23 +25,29 @@ function isLevelEnabled(messageLevel, configuredLevel) {
 
 // ---- Config File ----
 
+async function getActiveConfigUrl() {
+  const settings = await fetch(chrome.runtime.getURL("settings.json")).then(r => r.json());
+  const env = settings.env || "dev";
+  return { url: chrome.runtime.getURL(`config.${env}.json`), env };
+}
+
 async function getFileConfig() {
-  const url = chrome.runtime.getURL("config.json");
+  const { url, env } = await getActiveConfigUrl();
   const resp = await fetch(url);
-  if (!resp.ok) throw new Error("Could not read config.json from extension package.");
+  if (!resp.ok) throw new Error(`Could not read config.${env}.json from extension package.`);
   const cfg = await resp.json();
-  if (!cfg.domain)                           throw new Error("'domain' is not set in config.json.");
-  if (!cfg.apiVersion)                       throw new Error("'apiVersion' is not set in config.json (e.g. \"v60.0\").");
+  if (!cfg.domain)                           throw new Error(`'domain' is not set in config.${env}.json.`);
+  if (!cfg.apiVersion)                       throw new Error(`'apiVersion' is not set in config.${env}.json (e.g. "v60.0").`);
   if (!Number.isInteger(cfg.maxRecords) || cfg.maxRecords < 1)
-    throw new Error("'maxRecords' must be a positive integer in config.json.");
-  if (!cfg.object)         throw new Error("'object' is not set in config.json.");
-  if (!cfg.ownerFieldName) throw new Error("'ownerFieldName' is not set in config.json. Updates are blocked until this is configured.");
+    throw new Error(`'maxRecords' must be a positive integer in config.${env}.json.`);
+  if (!cfg.object)         throw new Error(`'object' is not set in config.${env}.json.`);
+  if (!cfg.ownerFieldName) throw new Error(`'ownerFieldName' is not set in config.${env}.json. Updates are blocked until this is configured.`);
   if (!cfg.dailyScheduler?.filters?.conditions?.length)
-    throw new Error("'dailyScheduler.filters.conditions' must be a non-empty array in config.json.");
+    throw new Error(`'dailyScheduler.filters.conditions' must be a non-empty array in config.${env}.json.`);
   if (cfg.dailyScheduler.filters.conditions.length > 1 && !cfg.dailyScheduler.filters.logic)
-    throw new Error("'dailyScheduler.filters.logic' is required when more than one condition is defined.");
+    throw new Error(`'dailyScheduler.filters.logic' is required when more than one condition is defined.`);
   if (!Array.isArray(cfg.dailyScheduler?.updateFields) || cfg.dailyScheduler.updateFields.length === 0)
-    throw new Error("'dailyScheduler.updateFields' must be a non-empty array in config.json.");
+    throw new Error(`'dailyScheduler.updateFields' must be a non-empty array in config.${env}.json.`);
   return cfg;
 }
 
