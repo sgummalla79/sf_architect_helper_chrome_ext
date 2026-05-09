@@ -432,7 +432,7 @@ async function handleButtonAction(buttonId, recordId, duration) {
 }
 
 function notifyPanelRefresh() {
-  chrome.runtime.sendMessage({ action: "refreshEngagements" }).catch(() => {});
+  chrome.storage.local.set({ sf_panel_refresh: Date.now() }).catch(() => {});
 }
 
 async function fireScheduledCall(recordId) {
@@ -570,7 +570,9 @@ async function handleRunNow() {
 }
 
 async function handleSaveConfig(config) {
-  await chrome.storage.local.set({ [STORAGE_KEY]: config });
+  // Merge with existing — never wipe fields that weren't included in this save
+  const existing = (await chrome.storage.local.get(STORAGE_KEY))[STORAGE_KEY] || {};
+  await chrome.storage.local.set({ [STORAGE_KEY]: { ...existing, ...config } });
   await rescheduleAlarm();
   return { success: true };
 }
@@ -578,10 +580,17 @@ async function handleSaveConfig(config) {
 async function handleGetConfig() {
   const data = await chrome.storage.local.get(STORAGE_KEY);
   const config = data[STORAGE_KEY] || {};
+  let dirty = false;
   if (!config.scheduledTime || config.scheduledTime === "09:00") {
     config.scheduledTime = "17:00";
+    dirty = true;
   }
-  if (config.isActive === undefined) config.isActive = true;
+  if (config.isActive === undefined) {
+    config.isActive = true;
+    dirty = true;
+  }
+  // Persist defaults so they survive restarts without needing re-calculation
+  if (dirty) await chrome.storage.local.set({ [STORAGE_KEY]: config });
   return { success: true, config };
 }
 
@@ -726,6 +735,7 @@ async function executeScheduledUpdate() {
   }
 
   await chrome.storage.local.remove(ENGAGEMENTS_CACHE_KEY);
+  notifyPanelRefresh();
 }
 
 // ---- Salesforce Helpers ----

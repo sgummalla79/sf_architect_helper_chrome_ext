@@ -276,6 +276,8 @@ async function loadEngagements(force = false) {
   });
 
   // Action buttons (Customer Call, Set To Waiting, End Call, etc.)
+  applyEngSearch();
+
   list.querySelectorAll(".btn-action[data-button-id]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const card = btn.closest(".eng-card");
@@ -300,8 +302,8 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") loadEngagements(true);
 });
 
-chrome.runtime.onMessage.addListener((msg) => {
-  if (msg.action === "refreshEngagements") loadEngagements(true);
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && changes.sf_panel_refresh) loadEngagements(true);
 });
 
 // ---- Init ----
@@ -330,6 +332,13 @@ $("#scheduledTime").addEventListener("change", async () => {
 // ---- Open Config ----
 $("#btnOpenConfig").addEventListener("click", () => {
   window.open(chrome.runtime.getURL("config.json"), "_blank");
+});
+
+// ---- Reload Extension ----
+$("#btnReloadExt").addEventListener("click", () => {
+  if (confirm("Reload the extension? The side panel will close and reopen.\nUse this after editing config.json to pick up changes.")) {
+    chrome.runtime.reload();
+  }
 });
 
 // ---- Run Now ----
@@ -381,6 +390,16 @@ async function loadLogs() {
 }
 
 $("#btnRefreshEngagements").addEventListener("click", () => loadEngagements(true));
+
+// ---- Engagement Search ----
+function applyEngSearch() {
+  const term = $("#engSearch").value.toLowerCase().trim();
+  document.querySelectorAll("#engList .eng-card").forEach(card => {
+    const text = (card.querySelector(".eng-name-text")?.textContent || "").toLowerCase();
+    card.style.display = !term || text.includes(term) ? "" : "none";
+  });
+}
+$("#engSearch").addEventListener("input", applyEngSearch);
 
 $("#btnClearEngLogs").addEventListener("click", async () => {
   await sendMsg({ action: "clearEngagementLogs" });
